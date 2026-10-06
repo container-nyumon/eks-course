@@ -1,0 +1,11 @@
+# 更新でノードを空けるときも、掲示板の Pod を必ず1つは動かしておく
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: hitokoto
+  namespace: hitokoto
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: hitokoto
