@@ -1,0 +1,14 @@
+# Auto Mode のクラスター（任意のハンズオン）。NAT ゲートウェイは既定（1つ）のまま
+#   eksctl create cluster -f auto/cluster-auto.yaml
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: eks-course-auto
+  region: ap-northeast-1
+  version: "1.37"
+  tags:
+    course: eks-course
+
+autoModeConfig:
+  enabled: true               # ノード・ロードバランサー・EBS を AWS が管理する
