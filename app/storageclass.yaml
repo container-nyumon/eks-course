@@ -1,0 +1,10 @@
+# EBS（gp3）を PVC から作るための StorageClass
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: gp3
+provisioner: ebs.csi.aws.com
+parameters:
+  type: gp3
+volumeBindingMode: WaitForFirstConsumer   # Pod の置き場所が決まってから、同じゾーンに EBS を作る
+reclaimPolicy: Delete                     # PVC を消すと EBS も消える
