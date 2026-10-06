@@ -1,0 +1,45 @@
+# 1回目：公開の設定（LoadBalancerConfiguration）を付けずに作る → 内部向けの ALB になる
+apiVersion: gateway.networking.k8s.io/v1
+kind: GatewayClass
+metadata:
+  name: aws-alb
+spec:
+  controllerName: gateway.k8s.aws/alb      # AWS Load Balancer Controller が担当する
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: web
+  namespace: hitokoto
+spec:
+  gatewayClassName: aws-alb
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 80
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: hitokoto
+  namespace: hitokoto
+spec:
+  parentRefs:
+    - name: web
+  rules:
+    - backendRefs:
+        - name: hitokoto
+          port: 80
+---
+apiVersion: gateway.k8s.aws/v1
+kind: TargetGroupConfiguration           # ターゲットの種類とヘルスチェック
+metadata:
+  name: hitokoto
+  namespace: hitokoto
+spec:
+  targetReference:
+    name: hitokoto                        # Service の名前
+  defaultConfiguration:
+    targetType: ip                        # Pod へ直接（既定は instance）
+    healthCheckConfig:
+      healthCheckPath: /health
