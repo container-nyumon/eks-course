@@ -1,0 +1,68 @@
+# データベース（PostgreSQL）。データは EBS（PVC）に置く
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: db-data
+  namespace: hitokoto
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: gp3
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: db
+  namespace: hitokoto
+  labels:
+    app: db
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate      # 同じ EBS を2つの Pod で使わないように、消してから作る
+  selector:
+    matchLabels:
+      app: db
+  template:
+    metadata:
+      labels:
+        app: db
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:17-alpine
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db
+                  key: password
+            - name: PGDATA                       # EBS の直下には lost+found があるため、1段下に置く
+              value: /var/lib/postgresql/data/pgdata
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: db-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: db
+  namespace: hitokoto
+spec:
+  selector:
+    app: db
+  ports:
+    - port: 5432
